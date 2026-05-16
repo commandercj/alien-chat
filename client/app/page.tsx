@@ -14,37 +14,36 @@ export default function Home() {
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null)
 
-  // ✅ JOIN ROOM FIXED
+  // ✅ FIXED: JOIN ROOM (ONLY ONCE)
   useEffect(() => {
-    if (!room || !joined) return
+    if (!joined || !room) return
+
     socket.emit("join_room", room)
-  }, [room, joined])
+  }, [joined, room])
 
-  // ✅ RECEIVE MESSAGES FIXED
+  // ✅ FIXED: RECEIVE EVENTS (WITH CLEANUP)
   useEffect(() => {
-    socket.on("receive_message", (msg) => {
+    const handleMessage = (msg: any) => {
       setMessages((prev) => [...prev, msg])
-    })
+    }
 
-    socket.on("typing", (data) => {
+    const handleTyping = (data: any) => {
       setTyping(data)
+      setTimeout(() => setTyping(""), 1000)
+    }
 
-      setTimeout(() => {
-        setTyping("")
-      }, 1000)
-    })
+    socket.on("receive_message", handleMessage)
+    socket.on("typing", handleTyping)
 
     return () => {
-      socket.off("receive_message")
-      socket.off("typing")
+      socket.off("receive_message", handleMessage)
+      socket.off("typing", handleTyping)
     }
   }, [])
 
   // auto scroll
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({
-      behavior: "smooth"
-    })
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
   }, [messages])
 
   const createRoom = () => {
@@ -55,11 +54,10 @@ export default function Home() {
   const joinRoom = () => {
     if (!username || !room) return
 
-    socket.emit("join_room", room)
     setJoined(true)
   }
 
-  // ✅ SEND MESSAGE FIXED
+  // ✅ FIXED: SEND MESSAGE
   const sendMessage = () => {
     if (!message.trim() || !room || !username) return
 
@@ -72,11 +70,10 @@ export default function Home() {
 
     socket.emit("send_message", msgData)
 
-    setMessages((prev) => [...prev, msgData]) // instant UI update
+    setMessages((prev) => [...prev, msgData])
     setMessage("")
   }
 
-  // typing fix
   const handleTyping = (value: string) => {
     setMessage(value)
 
@@ -87,7 +84,6 @@ export default function Home() {
 
   return (
     <div style={styles.app}>
-      {/* SIDEBAR */}
       <div style={styles.sidebar}>
         <h1 style={styles.logo}>👽 Alien Chat</h1>
 
@@ -121,7 +117,6 @@ export default function Home() {
         )}
       </div>
 
-      {/* CHAT AREA */}
       <div style={styles.chat}>
         <div style={styles.header}>
           <h2>🚀 Room: {room || "No Room Joined"}</h2>
@@ -143,7 +138,6 @@ export default function Home() {
                 <b>{m.username}</b>
                 <span>{m.time}</span>
               </div>
-
               <div>{m.message}</div>
             </div>
           ))}
