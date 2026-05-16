@@ -8,16 +8,17 @@ export default function ChatRoom() {
   const { room } = useParams()
 
   const [username, setUsername] = useState("")
+  const [joined, setJoined] = useState(false)
   const [message, setMessage] = useState("")
   const [messages, setMessages] = useState<any[]>([])
 
   const endRef = useRef<HTMLDivElement | null>(null)
 
-  // JOIN ROOM FROM URL
+  // JOIN ROOM FIXED (with button control)
   useEffect(() => {
-    if (!room) return
+    if (!room || !joined) return
     socket.emit("join_room", room)
-  }, [room])
+  }, [room, joined])
 
   // RECEIVE MESSAGES
   useEffect(() => {
@@ -39,7 +40,7 @@ export default function ChatRoom() {
 
   // SEND MESSAGE
   const sendMessage = () => {
-    if (!message.trim() || !username) return
+    if (!message.trim() || !username || !room) return
 
     const msgData = {
       room,
@@ -59,33 +60,52 @@ export default function ChatRoom() {
       <div style={styles.box}>
         <h2>🔗 Room: {room}</h2>
 
-        <input
-          placeholder="Username"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          style={styles.input}
-        />
+        {/* JOIN SECTION */}
+        {!joined ? (
+          <div style={styles.joinBox}>
+            <input
+              placeholder="Enter username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              style={styles.input}
+            />
 
-        <div style={styles.chat}>
-          {messages.map((m, i) => (
-            <div key={i} style={styles.msg}>
-              <b>{m.username}</b>: {m.message}
+            <button
+              style={styles.joinBtn}
+              onClick={() => {
+                if (!username) return
+                setJoined(true)
+              }}
+            >
+              Join Room
+            </button>
+          </div>
+        ) : (
+          <>
+            {/* CHAT */}
+            <div style={styles.chat}>
+              {messages.map((m, i) => (
+                <div key={i} style={styles.msg}>
+                  <b>{m.username}</b>: {m.message}
+                </div>
+              ))}
+              <div ref={endRef} />
             </div>
-          ))}
-          <div ref={endRef} />
-        </div>
 
-        <div style={styles.bottom}>
-          <input
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            placeholder="Message..."
-            style={styles.input}
-          />
-          <button onClick={sendMessage} style={styles.btn}>
-            Send
-          </button>
-        </div>
+            {/* INPUT */}
+            <div style={styles.bottom}>
+              <input
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                placeholder="Message..."
+                style={styles.input}
+              />
+              <button onClick={sendMessage} style={styles.btn}>
+                Send
+              </button>
+            </div>
+          </>
+        )}
       </div>
     </div>
   )
@@ -97,7 +117,7 @@ const styles: any = {
     justifyContent: "center",
     alignItems: "center",
     height: "100vh",
-    background: "#000",
+    background: "radial-gradient(circle at top,#0a0f1f,#000)",
     color: "#00ffd5",
     fontFamily: "monospace"
   },
@@ -107,6 +127,12 @@ const styles: any = {
     border: "1px solid #00ffd5",
     padding: "20px",
     borderRadius: "12px"
+  },
+
+  joinBox: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "10px"
   },
 
   chat: {
@@ -131,13 +157,23 @@ const styles: any = {
     padding: "10px",
     background: "#000",
     border: "1px solid #00ffd5",
-    color: "#00ffd5"
+    color: "#00ffd5",
+    borderRadius: "8px"
+  },
+
+  joinBtn: {
+    padding: "10px",
+    background: "#00ffd5",
+    border: "none",
+    fontWeight: "bold",
+    borderRadius: "8px"
   },
 
   btn: {
     padding: "10px",
     background: "#00ffd5",
     border: "none",
-    fontWeight: "bold"
+    fontWeight: "bold",
+    borderRadius: "8px"
   }
 }
