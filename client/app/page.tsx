@@ -1,30 +1,19 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useState, useRef } from "react"
+import { useParams } from "next/navigation"
 import socket from "@/lib/socket"
 
-const users = [
-  { name: "Alex", online: true },
-  { name: "Ken", online: true },
-  { name: "Mika", online: false },
-  { name: "Zane", online: true }
-]
+export default function ChatRoom() {
+  const { room } = useParams()
 
-export default function Home() {
   const [username, setUsername] = useState("")
-  const [selectedUser, setSelectedUser] = useState("Alex")
   const [message, setMessage] = useState("")
   const [messages, setMessages] = useState<any[]>([])
 
-  const messagesEndRef = useRef<HTMLDivElement | null>(null)
+  const endRef = useRef<HTMLDivElement | null>(null)
 
-  // ✅ SAFE ROOM (NO ERROR)
-  const room =
-    username && selectedUser
-      ? [username, selectedUser].sort().join("-")
-      : ""
-
-  // JOIN ROOM SAFE
+  // JOIN ROOM FROM URL
   useEffect(() => {
     if (!room) return
     socket.emit("join_room", room)
@@ -32,27 +21,25 @@ export default function Home() {
 
   // RECEIVE MESSAGES
   useEffect(() => {
-    const handleMessage = (msg: any) => {
+    const handleMsg = (msg: any) => {
       setMessages((prev) => [...prev, msg])
     }
 
-    socket.on("receive_message", handleMessage)
+    socket.on("receive_message", handleMsg)
 
     return () => {
-      socket.off("receive_message", handleMessage)
+      socket.off("receive_message", handleMsg)
     }
   }, [])
 
   // AUTO SCROLL
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({
-      behavior: "smooth"
-    })
+    endRef.current?.scrollIntoView({ behavior: "smooth" })
   }, [messages])
 
   // SEND MESSAGE
   const sendMessage = () => {
-    if (!message.trim() || !room || !username) return
+    if (!message.trim() || !username) return
 
     const msgData = {
       room,
@@ -69,89 +56,33 @@ export default function Home() {
 
   return (
     <div style={styles.app}>
-      {/* SIDEBAR */}
-      <div style={styles.sidebar}>
-        <h1 style={styles.logo}>👽 Alien DM</h1>
+      <div style={styles.box}>
+        <h2>🔗 Room: {room}</h2>
 
         <input
-          style={styles.input}
-          placeholder="Your username..."
+          placeholder="Username"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
+          style={styles.input}
         />
 
-        <div style={styles.title}>DIRECT MESSAGES</div>
-
-        {users.map((user, i) => (
-          <div
-            key={i}
-            onClick={() => setSelectedUser(user.name)}
-            style={{
-              ...styles.userCard,
-              background:
-                selectedUser === user.name
-                  ? "rgba(0,255,200,0.15)"
-                  : "transparent"
-            }}
-          >
-            <div style={styles.userRow}>
-              <div
-                style={{
-                  ...styles.dot,
-                  background: user.online ? "#00ff99" : "#444"
-                }}
-              />
-              <span>{user.name}</span>
+        <div style={styles.chat}>
+          {messages.map((m, i) => (
+            <div key={i} style={styles.msg}>
+              <b>{m.username}</b>: {m.message}
             </div>
-          </div>
-        ))}
-      </div>
-
-      {/* CHAT */}
-      <div style={styles.chat}>
-        <div style={styles.header}>
-          👾 Chat with {selectedUser}
+          ))}
+          <div ref={endRef} />
         </div>
 
-        <div style={styles.messages}>
-          {messages
-            .filter((m) => m.room === room)
-            .map((m, i) => (
-              <div
-                key={i}
-                style={{
-                  ...styles.bubble,
-                  alignSelf:
-                    m.username === username
-                      ? "flex-end"
-                      : "flex-start",
-                  background:
-                    m.username === username
-                      ? "linear-gradient(45deg,#00ffd5,#0066ff)"
-                      : "rgba(255,255,255,0.06)"
-                }}
-              >
-                <div style={styles.meta}>
-                  <b>{m.username}</b>
-                  <span>{m.time}</span>
-                </div>
-                <div>{m.message}</div>
-              </div>
-            ))}
-
-          <div ref={messagesEndRef} />
-        </div>
-
-        {/* INPUT */}
-        <div style={styles.inputBox}>
+        <div style={styles.bottom}>
           <input
-            style={styles.inputMsg}
-            placeholder="Type message..."
             value={message}
             onChange={(e) => setMessage(e.target.value)}
+            placeholder="Message..."
+            style={styles.input}
           />
-
-          <button style={styles.sendBtn} onClick={sendMessage}>
+          <button onClick={sendMessage} style={styles.btn}>
             Send
           </button>
         </div>
@@ -163,117 +94,50 @@ export default function Home() {
 const styles: any = {
   app: {
     display: "flex",
-    height: "100vh",
-    background: "radial-gradient(circle at top,#0a0f1f,#000)",
-    color: "#fff",
-    fontFamily: "Inter, sans-serif"
-  },
-
-  sidebar: {
-    width: "280px",
-    padding: "20px",
-    background: "rgba(255,255,255,0.04)",
-    backdropFilter: "blur(20px)",
-    borderRight: "1px solid rgba(255,255,255,0.08)"
-  },
-
-  logo: {
-    color: "#00ffd5",
-    marginBottom: "10px"
-  },
-
-  input: {
-    width: "100%",
-    padding: "10px",
-    marginBottom: "10px",
-    borderRadius: "10px",
-    border: "1px solid rgba(255,255,255,0.1)",
-    background: "rgba(255,255,255,0.05)",
-    color: "#fff"
-  },
-
-  title: {
-    fontSize: "12px",
-    opacity: 0.6,
-    marginBottom: "10px"
-  },
-
-  userCard: {
-    padding: "12px",
-    borderRadius: "12px",
-    cursor: "pointer",
-    marginBottom: "6px"
-  },
-
-  userRow: {
-    display: "flex",
+    justifyContent: "center",
     alignItems: "center",
-    gap: "8px"
+    height: "100vh",
+    background: "#000",
+    color: "#00ffd5",
+    fontFamily: "monospace"
   },
 
-  dot: {
-    width: "10px",
-    height: "10px",
-    borderRadius: "50%"
+  box: {
+    width: "500px",
+    border: "1px solid #00ffd5",
+    padding: "20px",
+    borderRadius: "12px"
   },
 
   chat: {
-    flex: 1,
-    display: "flex",
-    flexDirection: "column"
-  },
-
-  header: {
-    padding: "15px",
-    borderBottom: "1px solid rgba(255,255,255,0.08)"
-  },
-
-  messages: {
-    flex: 1,
-    padding: "20px",
+    height: "300px",
     overflowY: "auto",
+    margin: "10px 0",
+    padding: "10px",
+    border: "1px solid #00ffd5"
+  },
+
+  msg: {
+    marginBottom: "8px"
+  },
+
+  bottom: {
     display: "flex",
-    flexDirection: "column",
     gap: "10px"
   },
 
-  bubble: {
-    maxWidth: "60%",
-    padding: "12px",
-    borderRadius: "14px"
-  },
-
-  meta: {
-    display: "flex",
-    justifyContent: "space-between",
-    fontSize: "11px",
-    opacity: 0.7,
-    marginBottom: "5px"
-  },
-
-  inputBox: {
-    display: "flex",
-    padding: "15px",
-    gap: "10px",
-    borderTop: "1px solid rgba(255,255,255,0.08)"
-  },
-
-  inputMsg: {
+  input: {
     flex: 1,
-    padding: "12px",
-    borderRadius: "12px",
-    border: "1px solid rgba(255,255,255,0.1)",
-    background: "rgba(255,255,255,0.05)",
-    color: "#fff"
+    padding: "10px",
+    background: "#000",
+    border: "1px solid #00ffd5",
+    color: "#00ffd5"
   },
 
-  sendBtn: {
-    padding: "12px 18px",
-    borderRadius: "12px",
+  btn: {
+    padding: "10px",
+    background: "#00ffd5",
     border: "none",
-    background: "linear-gradient(45deg,#00ffd5,#0066ff)",
-    color: "#000",
-    fontWeight: "bold",
-    cursor: "pointer"
+    fontWeight: "bold"
   }
 }
