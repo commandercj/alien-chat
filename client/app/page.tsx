@@ -14,14 +14,14 @@ export default function Home() {
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null)
 
-  // ✅ FIXED: JOIN ROOM (ONLY ONCE)
+  //  FIXED: JOIN ROOM (ONLY ONCE)
   useEffect(() => {
     if (!joined || !room) return
 
     socket.emit("join_room", room)
   }, [joined, room])
 
-  // ✅ FIXED: RECEIVE EVENTS (WITH CLEANUP)
+  //  FIXED: RECEIVE EVENTS (WITH CLEANUP)
   useEffect(() => {
     const handleMessage = (msg: any) => {
       setMessages((prev) => [...prev, msg])
@@ -57,7 +57,7 @@ export default function Home() {
     setJoined(true)
   }
 
-  // ✅ FIXED: SEND MESSAGE
+  //  FIXED: SEND MESSAGE
   const sendMessage = () => {
     if (!message.trim() || !room || !username) return
 
@@ -83,7 +83,7 @@ export default function Home() {
   return (
     <div style={styles.app}>
       <div style={styles.sidebar}>
-        <h1 style={styles.logo}>👽 Alien Chat</h1>
+        <h1 style={styles.logo}>ZENITH PRIVATE CHAT</h1>
 
         <input
           style={styles.input}
@@ -117,7 +117,7 @@ export default function Home() {
 
       <div style={styles.chat}>
         <div style={styles.header}>
-          <h2>🚀 Room: {room || "No Room Joined"}</h2>
+          <h2> Room: {room || "No Room Joined"}</h2>
         </div>
 
         <div style={styles.messages}>
