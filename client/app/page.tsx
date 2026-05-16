@@ -14,6 +14,13 @@ export default function Home() {
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null)
 
+  // ✅ JOIN ROOM FIXED
+  useEffect(() => {
+    if (!room || !joined) return
+    socket.emit("join_room", room)
+  }, [room, joined])
+
+  // ✅ RECEIVE MESSAGES FIXED
   useEffect(() => {
     socket.on("receive_message", (msg) => {
       setMessages((prev) => [...prev, msg])
@@ -33,6 +40,7 @@ export default function Home() {
     }
   }, [])
 
+  // auto scroll
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({
       behavior: "smooth"
@@ -51,8 +59,9 @@ export default function Home() {
     setJoined(true)
   }
 
+  // ✅ SEND MESSAGE FIXED
   const sendMessage = () => {
-    if (!message.trim()) return
+    if (!message.trim() || !room || !username) return
 
     const msgData = {
       room,
@@ -63,13 +72,17 @@ export default function Home() {
 
     socket.emit("send_message", msgData)
 
+    setMessages((prev) => [...prev, msgData]) // instant UI update
     setMessage("")
   }
 
+  // typing fix
   const handleTyping = (value: string) => {
     setMessage(value)
 
-    socket.emit("typing", username)
+    if (username && room) {
+      socket.emit("typing", username)
+    }
   }
 
   return (
@@ -121,13 +134,9 @@ export default function Home() {
               style={{
                 ...styles.message,
                 alignSelf:
-                  m.username === username
-                    ? "flex-end"
-                    : "flex-start",
+                  m.username === username ? "flex-end" : "flex-start",
                 background:
-                  m.username === username
-                    ? "#00ffcc"
-                    : "#111"
+                  m.username === username ? "#00ffcc" : "#111"
               }}
             >
               <div style={styles.meta}>
@@ -153,15 +162,10 @@ export default function Home() {
             style={styles.chatInput}
             placeholder="Type your alien message..."
             value={message}
-            onChange={(e) =>
-              handleTyping(e.target.value)
-            }
+            onChange={(e) => handleTyping(e.target.value)}
           />
 
-          <button
-            style={styles.sendBtn}
-            onClick={sendMessage}
-          >
+          <button style={styles.sendBtn} onClick={sendMessage}>
             Send
           </button>
         </div>
@@ -174,12 +178,10 @@ const styles: any = {
   app: {
     display: "flex",
     height: "100vh",
-    background:
-      "radial-gradient(circle at top, #05010a, #000000)",
+    background: "radial-gradient(circle at top, #05010a, #000000)",
     color: "#00ffcc",
     fontFamily: "Courier New, monospace"
   },
-
   sidebar: {
     width: "270px",
     background: "rgba(0,255,204,0.05)",
@@ -190,11 +192,7 @@ const styles: any = {
     gap: "10px",
     boxShadow: "0 0 20px #00ffcc33"
   },
-
-  logo: {
-    textShadow: "0 0 15px #00ffcc"
-  },
-
+  logo: { textShadow: "0 0 15px #00ffcc" },
   roomBox: {
     marginTop: "20px",
     padding: "10px",
@@ -202,19 +200,16 @@ const styles: any = {
     borderRadius: "10px",
     textAlign: "center"
   },
-
   chat: {
     flex: 1,
     display: "flex",
     flexDirection: "column"
   },
-
   header: {
     padding: "15px",
     borderBottom: "1px solid #00ffcc33",
     background: "rgba(0,0,0,0.4)"
   },
-
   messages: {
     flex: 1,
     overflowY: "auto",
@@ -223,7 +218,6 @@ const styles: any = {
     flexDirection: "column",
     gap: "10px"
   },
-
   message: {
     padding: "12px",
     borderRadius: "12px",
@@ -231,7 +225,6 @@ const styles: any = {
     color: "#fff",
     boxShadow: "0 0 10px #00ffcc22"
   },
-
   meta: {
     display: "flex",
     justifyContent: "space-between",
@@ -239,19 +232,13 @@ const styles: any = {
     marginBottom: "5px",
     opacity: 0.7
   },
-
-  typing: {
-    fontSize: "12px",
-    opacity: 0.7
-  },
-
+  typing: { fontSize: "12px", opacity: 0.7 },
   inputBox: {
     display: "flex",
     padding: "10px",
     borderTop: "1px solid #00ffcc33",
     background: "rgba(0,0,0,0.5)"
   },
-
   chatInput: {
     flex: 1,
     padding: "12px",
@@ -261,19 +248,16 @@ const styles: any = {
     borderRadius: "8px",
     outline: "none"
   },
-
   sendBtn: {
     marginLeft: "10px",
     padding: "12px 16px",
-    background:
-      "linear-gradient(45deg,#00ffcc,#0066ff)",
+    background: "linear-gradient(45deg,#00ffcc,#0066ff)",
     border: "none",
     color: "#000",
     fontWeight: "bold",
     borderRadius: "8px",
     cursor: "pointer"
   },
-
   input: {
     padding: "12px",
     background: "#000",
@@ -282,22 +266,18 @@ const styles: any = {
     borderRadius: "8px",
     outline: "none"
   },
-
   button: {
     padding: "12px",
-    background:
-      "linear-gradient(45deg,#00ffcc,#00ff88)",
+    background: "linear-gradient(45deg,#00ffcc,#00ff88)",
     border: "none",
     color: "#000",
     fontWeight: "bold",
     borderRadius: "8px",
     cursor: "pointer"
   },
-
   createBtn: {
     padding: "12px",
-    background:
-      "linear-gradient(45deg,#ff00ff,#00ccff)",
+    background: "linear-gradient(45deg,#ff00ff,#00ccff)",
     border: "none",
     color: "#fff",
     fontWeight: "bold",
