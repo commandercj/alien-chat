@@ -14,31 +14,31 @@ export default function ChatRoom() {
 
   const endRef = useRef<HTMLDivElement | null>(null)
 
-  // JOIN ROOM FIXED (with button control)
+  // 🔐 JOIN ROOM (safe)
   useEffect(() => {
     if (!room || !joined) return
     socket.emit("join_room", room)
   }, [room, joined])
 
-  // RECEIVE MESSAGES
+  // 📩 RECEIVE MESSAGES
   useEffect(() => {
-    const handleMsg = (msg: any) => {
+    const handleMessage = (msg: any) => {
       setMessages((prev) => [...prev, msg])
     }
 
-    socket.on("receive_message", handleMsg)
+    socket.on("receive_message", handleMessage)
 
     return () => {
-      socket.off("receive_message", handleMsg)
+      socket.off("receive_message", handleMessage)
     }
   }, [])
 
-  // AUTO SCROLL
+  // 🔽 AUTO SCROLL
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" })
   }, [messages])
 
-  // SEND MESSAGE
+  // 📤 SEND MESSAGE
   const sendMessage = () => {
     if (!message.trim() || !username || !room) return
 
@@ -58,9 +58,10 @@ export default function ChatRoom() {
   return (
     <div style={styles.app}>
       <div style={styles.box}>
-        <h2>🔗 Room: {room}</h2>
+        <h2>👽 Alien Private Chat</h2>
+        <p style={styles.room}>Room: {room}</p>
 
-        {/* JOIN SECTION */}
+        {/* 🔐 JOIN SCREEN */}
         {!joined ? (
           <div style={styles.joinBox}>
             <input
@@ -73,34 +74,50 @@ export default function ChatRoom() {
             <button
               style={styles.joinBtn}
               onClick={() => {
-                if (!username) return
+                if (!username.trim()) return
                 setJoined(true)
               }}
             >
-              Join Room
+              Join Chat
             </button>
           </div>
         ) : (
           <>
-            {/* CHAT */}
+            {/* 💬 CHAT */}
             <div style={styles.chat}>
               {messages.map((m, i) => (
-                <div key={i} style={styles.msg}>
-                  <b>{m.username}</b>: {m.message}
+                <div
+                  key={i}
+                  style={{
+                    ...styles.msg,
+                    alignSelf:
+                      m.username === username
+                        ? "flex-end"
+                        : "flex-start",
+                    background:
+                      m.username === username
+                        ? "linear-gradient(45deg,#00ffd5,#0066ff)"
+                        : "rgba(255,255,255,0.06)"
+                  }}
+                >
+                  <b>{m.username}</b>
+                  <div>{m.message}</div>
+                  <small>{m.time}</small>
                 </div>
               ))}
               <div ref={endRef} />
             </div>
 
-            {/* INPUT */}
+            {/* ⌨ INPUT */}
             <div style={styles.bottom}>
               <input
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
-                placeholder="Message..."
+                placeholder="Type message..."
                 style={styles.input}
               />
-              <button onClick={sendMessage} style={styles.btn}>
+
+              <button onClick={sendMessage} style={styles.sendBtn}>
                 Send
               </button>
             </div>
@@ -123,10 +140,16 @@ const styles: any = {
   },
 
   box: {
-    width: "500px",
+    width: "520px",
     border: "1px solid #00ffd5",
+    borderRadius: "14px",
     padding: "20px",
-    borderRadius: "12px"
+    background: "rgba(0,0,0,0.6)"
+  },
+
+  room: {
+    fontSize: "12px",
+    opacity: 0.7
   },
 
   joinBox: {
@@ -136,15 +159,21 @@ const styles: any = {
   },
 
   chat: {
-    height: "300px",
+    height: "320px",
     overflowY: "auto",
-    margin: "10px 0",
+    margin: "15px 0",
     padding: "10px",
-    border: "1px solid #00ffd5"
+    border: "1px solid rgba(0,255,213,0.3)",
+    borderRadius: "10px",
+    display: "flex",
+    flexDirection: "column",
+    gap: "10px"
   },
 
   msg: {
-    marginBottom: "8px"
+    padding: "10px",
+    borderRadius: "12px",
+    maxWidth: "70%"
   },
 
   bottom: {
@@ -154,26 +183,30 @@ const styles: any = {
 
   input: {
     flex: 1,
-    padding: "10px",
+    padding: "12px",
     background: "#000",
     border: "1px solid #00ffd5",
     color: "#00ffd5",
-    borderRadius: "8px"
+    borderRadius: "10px",
+    outline: "none"
   },
 
   joinBtn: {
-    padding: "10px",
+    padding: "12px",
     background: "#00ffd5",
     border: "none",
     fontWeight: "bold",
-    borderRadius: "8px"
+    borderRadius: "10px",
+    cursor: "pointer"
   },
 
-  btn: {
-    padding: "10px",
-    background: "#00ffd5",
+  sendBtn: {
+    padding: "12px 16px",
+    background: "linear-gradient(45deg,#00ffd5,#0066ff)",
     border: "none",
     fontWeight: "bold",
-    borderRadius: "8px"
+    borderRadius: "10px",
+    cursor: "pointer",
+    color: "#000"
   }
 }
