@@ -69,8 +69,6 @@ export default function Home() {
     }
 
     socket.emit("send_message", msgData)
-
-    setMessages((prev) => [...prev, msgData])
     setMessage("")
   }
 
